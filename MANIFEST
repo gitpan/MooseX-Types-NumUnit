@@ -1,0 +1,13 @@
+LICENSE
+MANIFEST
+META.yml
+Makefile.PL
+README
+dist.ini
+ex/example.pl
+lib/MooseX/Types/NumUnit.pm
+t/50-coerce.t
+t/NumSI.t
+t/NumUnit.t
+t/num_of_si_unit_like.t
+t/num_of_unit.t
