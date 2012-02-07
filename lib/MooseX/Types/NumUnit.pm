@@ -1,7 +1,4 @@
 package MooseX::Types::NumUnit;
-{
-  $MooseX::Types::NumUnit::VERSION = '0.01';
-}
 
 =head1 NAME
 
@@ -12,22 +9,25 @@ MooseX::Types::NumUnit - Type(s) for using units in Moose
  package MyPackage
 
  use Moose;
- use MooseX::Types::NumUnit qw/num_of_unit/;
+ use MooseX::Types::NumUnit qw/NumUnit NumSI num_of_unit/;
 
- has 'quantity' => ( isa => 'NumUnit', default => 0 );
- has 'si_quantity' => ( isa => 'NumSI', required => 1 );
+ has 'quantity' => ( isa => NumUnit, default => 0 );
+ has 'si_quantity' => ( isa => NumSI, required => 1 );
  has 'length' => ( isa => num_of_unit('m'), default => '1 ft' );
 
 =head1 DESCRIPTION
 
 This module provides types (C<NumUnit> and friends) for Moose which represent physical units. More accurately it provides String to Number coercions, so that even if the user inputs a number with an incorrect (but compatible) unit, it will automatically coerce to a number of the correct unit. 
 
-A few things to note: since C<NumUnit> and friends are subtypes of C<Num>, a purely numerical value will not be coerced. This is by design, but should be kept in mind. Also C<NumUnit> and friends are coerced by default (see L<AUTOMATIC COERCION>).
+A few things to note: since C<NumUnit> and friends are subtypes of C<Num>, a purely numerical value will not be coerced. This is by design, but should be kept in mind. Also C<NumUnit> and friends are coerced by default (see L</AUTOMATIC COERCION>).
 
 =cut
 
 use strict;
 use warnings;
+
+our $VERSION = "0.02";
+$VERSION = eval $VERSION;
 
 use Moose::Util::TypeConstraints;
 
@@ -36,9 +36,12 @@ use Physics::Unit qw/GetUnit GetTypeUnit/;
 
 use Carp;
 
+use MooseX::Types -declare => [ qw/ NumUnit NumSI / ];
+use MooseX::Types::Moose qw/Num Str/;
+
 use Moose::Exporter;
 Moose::Exporter->setup_import_methods (
-  as_is => [qw/num_of_unit num_of_si_unit_like/],
+  as_is => [qw/num_of_unit num_of_si_unit_like/, \&NumUnit, \&NumSI],
 );
 
 ## For AlwaysCoerce only ##
@@ -58,7 +61,9 @@ When set to a true value, a string representing any conversion will be printed t
 
 our $Verbose;
 
-=head1 TYPES
+=head1 TYPE-LIKE FUNCTIONS
+
+Since version 0.02, C<MooseX::Types::NumUnit> does not provide global types. Rather it has exportable type-like function which behave like types but do not pollute the "type namespace". While they behave like types, remember they are functions and they should not be quoted when called. They are null prototyped though, should they shouldn't (usually) need parenthesis. Futher they are not exported by default and must be requested. For more information about this system see L<MooseX::Types>.
 
 =head2 C<NumUnit>
 
@@ -66,11 +71,11 @@ A subtype of C<Num> which accepts a number with a unit, but discards the unit on
 
 =cut
 
-subtype 'NumUnit',
-  as 'Num';
+subtype NumUnit,
+  as Num;
 
-coerce 'NumUnit',
-  from 'Str',
+coerce NumUnit,
+  from Str,
   via { _convert($_, 'strip_unit') };
 
 =head2 C<NumSI>
@@ -79,14 +84,14 @@ A subtype of C<NumUnit> which coerces to the SI equivalent of the unit passed in
 
 =cut
 
-subtype 'NumSI',
-  as 'NumUnit';
+subtype NumSI, 
+  as NumUnit;
 
-coerce 'NumSI',
-  from 'Str',
+coerce NumSI,
+  from Str,
   via { _convert($_) };
 
-=head1 ANONYMOUS TYPES
+=head1 ANONYMOUS TYPE GENERATORS
 
 This module provides functions which return anonymous types which satisfy certain criteria. These functions may be exported on request, but are not exported by default.
 
@@ -121,10 +126,10 @@ sub num_of_si_unit_like {
 sub _num_of_unit {
   my $unit = shift;
 
-  my $subtype = subtype as 'NumUnit';
+  my $subtype = subtype as NumUnit;
 
   coerce $subtype,
-    from 'Str',
+    from Str,
     via { _convert($_, $unit) };
 
   return $subtype;
@@ -176,11 +181,14 @@ Since the NumUnit types provided by this module are essentially just C<Num> type
 
 {
     package MooseX::Types::NumUnit::Role::Meta::Attribute;
-{
-  $MooseX::Types::NumUnit::Role::Meta::Attribute::VERSION = '0.01';
-}
+
+    our $VERSION = "0.02";
+    $VERSION = eval $VERSION;
+
     use namespace::autoclean;
     use Moose::Role;
+
+    use MooseX::Types::NumUnit qw/ NumUnit /;
 
     around should_coerce => sub {
         my $orig = shift;
@@ -190,17 +198,22 @@ Since the NumUnit types provided by this module are essentially just C<Num> type
 
         return $current_val if defined $current_val;
 
-        return 1 if $self->type_constraint && $self->type_constraint->has_coercion && $self->type_constraint->is_a_type_of('NumUnit');
+        my $type = $self->type_constraint;
+        return 1 if $type && $type->has_coercion && $type->is_a_type_of(NumUnit);
+
         return 0;
     };
 
     package MooseX::Types::NumUnit::Role::Meta::Class;
-{
-  $MooseX::Types::NumUnit::Role::Meta::Class::VERSION = '0.01';
-}
+
+    our $VERSION = "0.02";
+    $VERSION = eval $VERSION;
+
     use namespace::autoclean;
     use Moose::Role;
     use Moose::Util::TypeConstraints;
+
+    use MooseX::Types::NumUnit qw/ NumUnit /;
 
     around add_class_attribute => sub {
         my $next = shift;
@@ -209,7 +222,7 @@ Since the NumUnit types provided by this module are essentially just C<Num> type
 
         if (exists $opts{isa}) {
             my $type = Moose::Util::TypeConstraints::find_or_parse_type_constraint($opts{isa});
-            $opts{coerce} = 1 if not exists $opts{coerce} and $type->has_coercion and $type->is_a_type_of('NumUnit');
+            $opts{coerce} = 1 if not exists $opts{coerce} and $type->has_coercion and $type->is_a_type_of(NumUnit);
         }
 
         $self->$next($what, %opts);
@@ -257,6 +270,8 @@ This module relys on L<Math::Units::PhysicalValue> to split the value and the un
 
 =item L<MooseX::AlwaysCoerce>
 
+=item L<MooseX::Types>
+
 =back
 
 =head1 SOURCE REPOSITORY
@@ -269,7 +284,7 @@ Joel Berger, E<lt>joel.a.berger@gmail.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2011 by Joel Berger
+Copyright (C) 2012 by Joel Berger
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
