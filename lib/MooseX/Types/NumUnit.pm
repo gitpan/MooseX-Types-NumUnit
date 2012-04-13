@@ -26,13 +26,14 @@ A few things to note: since C<NumUnit> and friends are subtypes of C<Num>, a pur
 use strict;
 use warnings;
 
-our $VERSION = "0.02";
+our $VERSION = "0.03";
 $VERSION = eval $VERSION;
 
-use Moose::Util::TypeConstraints;
-
-use Math::Units::PhysicalValue qw/PV/;
-use Physics::Unit qw/GetUnit GetTypeUnit/;
+use Physics::Unit qw/InitUnit GetUnit GetTypeUnit $number_re/;
+BEGIN { 
+  InitUnit( ['mm'] => 'millimeter' ); 
+  #InitUnit( ['nm'] => 'nanometer'  );
+}
 
 use Carp;
 
@@ -141,12 +142,12 @@ sub _convert {
     my ($input, $requested_unit) = @_;
     $requested_unit ||= '';
 
-    my $pv = PV($input) || croak "Could not understand $_";
+    my $unit = $input;
+    my $val = $1 if $unit =~ s/($number_re)//;
 
-    my $val = 0+$pv->deunit->bsstr;
     return $val if ($requested_unit eq 'strip_unit');
 
-    my $given_unit = GetUnit( "$pv->[1]" );
+    my $given_unit = GetUnit( $unit );
 
     unless ($requested_unit) {
       my $base_unit = GetTypeUnit( $given_unit->type );
@@ -165,7 +166,7 @@ sub _convert {
       warn "Value supplied ($input) is not of type $req_str, using 0 instead.\n";
       $val = 0;
     } else {
-      warn "Converted $pv => $val $req_str\n" if $Verbose;
+      warn "Converted $input => $val $req_str\n" if $Verbose;
     }
 
     return $val;
@@ -182,7 +183,7 @@ Since the NumUnit types provided by this module are essentially just C<Num> type
 {
     package MooseX::Types::NumUnit::Role::Meta::Attribute;
 
-    our $VERSION = "0.02";
+    our $VERSION = "0.03";
     $VERSION = eval $VERSION;
 
     use namespace::autoclean;
@@ -206,7 +207,7 @@ Since the NumUnit types provided by this module are essentially just C<Num> type
 
     package MooseX::Types::NumUnit::Role::Meta::Class;
 
-    our $VERSION = "0.02";
+    our $VERSION = "0.03";
     $VERSION = eval $VERSION;
 
     use namespace::autoclean;
@@ -256,9 +257,9 @@ sub init_meta {
     goto $init_meta;
 }
 
-=head1 TODO
+=head1 NOTES
 
-This module relys on L<Math::Units::PhysicalValue> to split the value and the unit, but then (very naively) passes the unit conversion to L<Physics::Unit> which has a concept of a I<Base Unit>. Surely there must be some way to either only rely on one of the two, or to check that the hand-off works correctly.
+This module defines the unit C<mm> (C<millimeter>) which L<Physics::Unit> inexplicably lacks. Also the author is investigating if C<nm> can be changed to C<nanometer> from C<nautical mile>, but so far this has not happened.
 
 =head1 SEE ALSO
 
