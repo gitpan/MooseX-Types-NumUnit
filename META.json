@@ -4,7 +4,7 @@
       "Joel Berger <joel.a.berger@gmail.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "Module::Build version 0.3901, CPAN::Meta::Converter version 2.120921",
    "license" : [
       "perl_5"
    ],
@@ -41,7 +41,7 @@
             "MooseX::ClassAttribute" : "0",
             "MooseX::Types" : "0",
             "MooseX::Types::Moose" : "0",
-            "Physics::Unit" : "0",
+            "Physics::Unit" : "0.53",
             "namespace::autoclean" : "0",
             "strict" : "0",
             "warnings" : "0"
@@ -51,15 +51,15 @@
    "provides" : {
       "MooseX::Types::NumUnit" : {
          "file" : "lib/MooseX/Types/NumUnit.pm",
-         "version" : "0.03"
+         "version" : "0.04"
       },
       "MooseX::Types::NumUnit::Role::Meta::Attribute" : {
          "file" : "lib/MooseX/Types/NumUnit.pm",
-         "version" : "0.03"
+         "version" : "0.04"
       },
       "MooseX::Types::NumUnit::Role::Meta::Class" : {
          "file" : "lib/MooseX/Types/NumUnit.pm",
-         "version" : "0.03"
+         "version" : "0.04"
       }
    },
    "release_status" : "stable",
@@ -74,5 +74,5 @@
          "url" : "http://github.com/jberger/MooseX-Types-NumUnit"
       }
    },
-   "version" : "0.03"
+   "version" : "0.04"
 }

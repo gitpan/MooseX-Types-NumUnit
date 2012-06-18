@@ -26,13 +26,12 @@ A few things to note: since C<NumUnit> and friends are subtypes of C<Num>, a pur
 use strict;
 use warnings;
 
-our $VERSION = "0.03";
+our $VERSION = "0.04";
 $VERSION = eval $VERSION;
 
-use Physics::Unit qw/InitUnit GetUnit GetTypeUnit $number_re/;
+use Physics::Unit 0.53 qw/InitUnit GetUnit GetTypeUnit $number_re/;
 BEGIN { 
   InitUnit( ['mm'] => 'millimeter' ); 
-  #InitUnit( ['nm'] => 'nanometer'  );
 }
 
 use Carp;
@@ -94,7 +93,7 @@ coerce NumSI,
 
 =head1 ANONYMOUS TYPE GENERATORS
 
-This module provides functions which return anonymous types which satisfy certain criteria. These functions may be exported on request, but are not exported by default.
+This module provides functions which return anonymous types which satisfy certain criteria. These functions may be exported on request, but are not exported by default. As of version 0.04, if a given unit has already been used to create a C<NumUnit> subtype, it will be returned rather than creating a new subtype object.
 
 =head2 C<num_of_unit( $unit )>
 
@@ -124,14 +123,26 @@ sub num_of_si_unit_like {
   return _num_of_unit($unit);
 }
 
+# a hash to store (read: cache) the created NumUnit subtypes by unit name
+my %types;
+
 sub _num_of_unit {
   my $unit = shift;
+  my $unit_string = $unit->expanded;
+
+  # if an equivalent type exists return it
+  if ( defined $types{$unit_string} ) {
+    return $types{$unit_string};
+  }
 
   my $subtype = subtype as NumUnit;
 
   coerce $subtype,
     from Str,
     via { _convert($_, $unit) };
+
+  # cache unit for repeated use
+  $types{$unit_string} = $subtype;
 
   return $subtype;
 }
@@ -143,7 +154,7 @@ sub _convert {
     $requested_unit ||= '';
 
     my $unit = $input;
-    my $val = $1 if $unit =~ s/($number_re)//;
+    my $val = $1 if $unit =~ s/($number_re)//i;
 
     return $val if ($requested_unit eq 'strip_unit');
 
@@ -183,7 +194,7 @@ Since the NumUnit types provided by this module are essentially just C<Num> type
 {
     package MooseX::Types::NumUnit::Role::Meta::Attribute;
 
-    our $VERSION = "0.03";
+    our $VERSION = "0.04";
     $VERSION = eval $VERSION;
 
     use namespace::autoclean;
@@ -207,7 +218,7 @@ Since the NumUnit types provided by this module are essentially just C<Num> type
 
     package MooseX::Types::NumUnit::Role::Meta::Class;
 
-    our $VERSION = "0.03";
+    our $VERSION = "0.04";
     $VERSION = eval $VERSION;
 
     use namespace::autoclean;
@@ -259,7 +270,7 @@ sub init_meta {
 
 =head1 NOTES
 
-This module defines the unit C<mm> (C<millimeter>) which L<Physics::Unit> inexplicably lacks. Also the author is investigating if C<nm> can be changed to C<nanometer> from C<nautical mile>, but so far this has not happened.
+This module defines the unit C<mm> (C<millimeter>) which L<Physics::Unit> inexplicably lacks. 
 
 =head1 SEE ALSO
 
